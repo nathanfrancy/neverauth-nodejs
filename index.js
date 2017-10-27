@@ -5,8 +5,16 @@ let request = require('./request').sendRequest;
 
 function NeverAuthApi(args) {
     if (!args) args = {};
-    this.urlRoot = "https://api.neverauth.io";
-    this.protocol = "https";
+
+    // TODO: Change these to use https when we get that set up.
+    this.urlRoot = "http://api.neverauth.io";
+    let protocol = "http";
+
+    // Set up variables for this instance
+    this.accountAccessToken = args.accountAccessToken || null;
+    this.userAccessToken = args.userAccessToken || null;
+    this.clientId = args.clientId || null;
+    this.secretKey = args.secretKey || null;
 
     if (!!args.urlRoot) {
         this.urlRoot = args.urlRoot;
@@ -16,29 +24,31 @@ function NeverAuthApi(args) {
         } // Otherwise, use the default.
     }
 
+    let context = this;
+
     /**
-     * My Account API service.
+     * NeverAuth accounts API impl.
      */
-    this.myAccount = {
+    this.accounts = {
 
         /**
          * Registers for a NeverAuth account
-         * @param name
-         * @param email
-         * @param password
+         * @param data.name: required
+         * @param data.email: required
+         * @param data.password: required
          * @returns {Promise.<TResult>|*}
          */
-        register: (name, email, password) => {
+        register: (data) => {
             let args = {
                 data: {
-                    name: name,
-                    email: email,
-                    password: password
+                    name: data.name,
+                    email: data.email,
+                    password: data.password
                 },
                 headers: { "Content-Type": "application/json" }
             };
 
-            return request(`${this.urlRoot}/accounts/register`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/register`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return true;
             });
@@ -46,39 +56,42 @@ function NeverAuthApi(args) {
 
         /**
          * Authenticates a NeverAuth account
-         * @param email
-         * @param password
+         * @param data.email
+         * @param data.password
          * @returns {Promise.<TResult>|*}
          */
-        authenticate: (email, password) => {
+        authenticate: (data = {}) => {
             let args = {
                 data: {
-                    email: email,
-                    password: password
+                    email: data.email,
+                    password: data.password
                 },
                 headers: { "Content-Type": "application/json" }
             };
 
-            return request(`${this.urlRoot}/accounts/authenticate`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/authenticate`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
-                else return restResponse.data;
+                else {
+                    context.accountAccessToken = restResponse.token;
+                    return restResponse.data;
+                }
             });
         },
 
         /**
          * De-authenticates a NeverAuth account access token
-         * @param token
+         * @param data.token
          * @returns {Promise.<TResult>|*}
          */
-        deauthenticate: (token) => {
+        deauthenticate: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/deauthenticate`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/deauthenticate`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return true;
             });
@@ -86,18 +99,18 @@ function NeverAuthApi(args) {
 
         /**
          * Deactivates a NeverAuth account
-         * @param token
+         * @param data.token
          * @returns {Promise.<TResult>|*}
          */
-        deactivate: (token) => {
+        deactivate: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/deactivate`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/deactivate`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return true;
             });
@@ -105,18 +118,18 @@ function NeverAuthApi(args) {
 
         /**
          * Checks the status of a NeverAuth account token
-         * @param token
+         * @param data.token
          * @returns {Promise.<TResult>|*}
          */
-        checkToken: (token) => {
+        checkToken: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/checktoken`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/checktoken`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return true;
             });
@@ -124,18 +137,18 @@ function NeverAuthApi(args) {
 
         /**
          * Gets the current account profile with NeverAuth token
-         * @param token
+         * @param data.token
          * @returns {*|comb.Promise|Promise.<TResult>}
          */
-        getProfile: (token) => {
+        getProfile: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/profile`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/profile`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });
@@ -143,18 +156,18 @@ function NeverAuthApi(args) {
 
         /**
          * Gets the apps registered to a NeverAuth account
-         * @param token
+         * @param data.token
          * @returns {Promise.<TResult>|*}
          */
-        getApps: (token) => {
+        getApps: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/apps`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/apps`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });
@@ -162,19 +175,19 @@ function NeverAuthApi(args) {
 
         /**
          * Gets a specific app registered to a NeverAuth account
-         * @param token
-         * @param appid
+         * @param data.token
+         * @param data.appId
          * @returns {Promise.<TResult>|*}
          */
-        getApp: (token, appid) => {
+        getApp: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/apps/${appid}`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/apps/${data.appId}`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) {
                     throw new Error(restResponse.error);
                 }
@@ -184,19 +197,19 @@ function NeverAuthApi(args) {
 
         /**
          * Gets app users for a specific app tied to a NeverAuth account
-         * @param token
-         * @param appid
+         * @param data.token
+         * @param data.appId
          * @returns {Promise.<TResult>|*}
          */
-        getAppUsers: (token, appid) => {
+        getAppUsers: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/apps/${appid}/users`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/apps/${data.appId}/users`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) {
                     throw new Error(restResponse.data.message);
                 }
@@ -206,24 +219,24 @@ function NeverAuthApi(args) {
 
         /**
          * Creates an app for a NeverAuth account
-         * @param token
-         * @param name
-         * @param description
+         * @param data.token
+         * @param data.name
+         * @param data.description
          * @returns {Promise.<TResult>|*}
          */
-        createApp: (token, name, description) => {
+        createApp: (data = {}) => {
             let args = {
                 data: {
-                    name: name,
-                    description: description
+                    name: data.name,
+                    description: data.description
                 },
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/apps`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/apps`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) {
                     throw new Error(restResponse.data.message);
                 }
@@ -233,19 +246,19 @@ function NeverAuthApi(args) {
 
         /**
          * Deletes an app for a NeverAuth account
-         * @param token
-         * @param appid
+         * @param data.token
+         * @param data.appId
          * @returns {Promise.<TResult>|*}
          */
-        deleteApp: (token, appid) => {
+        deleteApp: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/apps/${appid}`, `delete`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/apps/${data.appId}`, `delete`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) {
                     throw new Error(restResponse.data.message);
                 }
@@ -255,23 +268,23 @@ function NeverAuthApi(args) {
 
         /**
          * Searches for
-         * @param token
-         * @param appid
-         * @param searchOptions
+         * @param data.token
+         * @param data.appId
+         * @param data.searchOptions
          * @returns {*|comb.Promise|Promise.<TResult>}
          */
-        searchAppActivity: (token, appid, searchOptions) => {
+        searchAppActivity: (data = {}) => {
             if (!searchOptions) searchOptions = {};
 
             let args = {
-                parameters: searchOptions,
+                parameters: data.searchOptions,
                 headers: {
-                    "x-neverauth-account-access-token": token,
+                    "x-neverauth-account-access-token": data.token || this.accountAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/accounts/apps/${appid}/activity`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/accounts/apps/${data.appId}/activity`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) {
                     throw new Error(restResponse.data.message);
                 }
@@ -281,36 +294,36 @@ function NeverAuthApi(args) {
     };
     
     /**
-     * App User API
+     * App Users API
      */
-    this.user = {
+    this.users = {
 
         /**
          * Creates a user
-         * @param clientid
-         * @param secretkey
-         * @param name
-         * @param email
-         * @param password
-         * @param settings
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.name
+         * @param data.email
+         * @param data.password
+         * @param data.settings
          * @returns {Promise.<TResult>|*}
          */
-        create: (clientid, secretkey, name, email, password, settings) => {
+        create: (data = {}) => {
             let args = {
                 data: {
-                    name: name,
-                    email: email,
-                    password: password,
-                    settings: settings || {}
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                    settings: data.settings || {}
                 },
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return true;
             });
@@ -318,49 +331,52 @@ function NeverAuthApi(args) {
 
         /**
          * Authenticates a user
-         * @param clientid
-         * @param secretkey
-         * @param email
-         * @param password
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.email
+         * @param data.password
          * @returns {Promise.<TResult>|*}
          */
-        authenticate: (clientid, secretkey, email, password) => {
+        authenticate: (data = {}) => {
             let args = {
                 data: {
-                    email: email,
-                    password: password
+                    email: data.email,
+                    password: data.password
                 },
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/auth/authenticate`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/auth/authenticate`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
-                else return restResponse.data;
+                else {
+                    context.userAccessToken = restResponse.token;
+                    return restResponse.data;
+                }
             });
         },
 
         /**
          * Checks an access token
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
          * @returns {Promise.<TResult>|*}
          */
-        checkToken: (clientid, secretkey, accessToken) => {
+        checkToken: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/auth/checktoken`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/auth/checktoken`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return true;
             });
@@ -368,68 +384,74 @@ function NeverAuthApi(args) {
 
         /**
          * De-authenticates a user
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
          * @returns {Promise.<TResult>|*}
          */
-        deauthenticate: (clientid, secretkey, accessToken) => {
+        deauthenticate: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/auth/deauthenticate`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/auth/deauthenticate`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
-                else return true;
+                else {
+                    context.userAccessToken = null;
+                    return true;
+                }
             });
         },
 
         /**
          * Deactivates a user
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
          * @returns {Promise.<TResult>|*}
          */
-        deactivate: (clientid, secretkey, accessToken) => {
+        deactivate: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/deactivate`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/deactivate`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
-                else return true;
+                else {
+                    context.userAccessToken = null;
+                    return true;
+                }
             });
         },
 
         /**
          * Gets the profile of the current user
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
          * @returns {Promise.<TResult>|*}
          */
-        getProfile: (clientid, secretkey, accessToken) => {
+        getProfile: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });
@@ -437,22 +459,22 @@ function NeverAuthApi(args) {
 
         /**
          * Gets the current user's settings
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
          * @returns {Promise.<TResult>|*}
          */
-        getSettings: (clientid, secretkey, accessToken) => {
+        getSettings: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/settings`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/settings`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });
@@ -460,23 +482,23 @@ function NeverAuthApi(args) {
 
         /**
          * Gets a specific setting for a user
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
-         * @param settingKey
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
+         * @param data.key
          * @returns {Promise.<TResult>|*}
          */
-        getSetting: (clientid, secretkey, accessToken, settingKey) => {
+        getSetting: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/settings/${settingKey}`, `get`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/settings/${data.key}`, `get`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });
@@ -484,24 +506,24 @@ function NeverAuthApi(args) {
 
         /**
          * Saves user settings
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
-         * @param settings
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
+         * @param data.settings
          * @returns {Promise.<TResult>|*}
          */
-        saveSettings: (clientid, secretkey, accessToken, settings) => {
+        saveSettings: (data = {}) => {
             let args = {
-                data: settings || {},
+                data: data.settings || {},
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/settings`, `post`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/settings`, `post`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });
@@ -509,23 +531,23 @@ function NeverAuthApi(args) {
 
         /**
          * Deletes a specific user setting by key value
-         * @param clientid
-         * @param secretkey
-         * @param accessToken
-         * @param key
+         * @param data.clientId
+         * @param data.secretKey
+         * @param data.accessToken
+         * @param data.key
          * @returns {Promise.<TResult>|*}
          */
-        deleteSetting: (clientid, secretkey, accessToken, key) => {
+        deleteSetting: (data = {}) => {
             let args = {
                 headers: {
-                    "x-neverauth-clientid": clientid,
-                    "x-neverauth-secretkey": secretkey,
-                    "x-neverauth-access-token": accessToken,
+                    "x-neverauth-clientid": data.clientId || this.clientId,
+                    "x-neverauth-secretkey": data.secretKey || this.secretKey,
+                    "x-neverauth-access-token": data.accessToken || this.userAccessToken,
                     "Content-Type": "application/json"
                 }
             };
 
-            return request(`${this.urlRoot}/users/settings/${key}`, `delete`, args).then((restResponse) => {
+            return request(`${context.urlRoot}/users/settings/${data.key}`, `delete`, args).then((restResponse) => {
                 if (restResponse.response.statusCode !== 200) throw new Error(restResponse.data.message);
                 else return restResponse.data;
             });

@@ -31,6 +31,22 @@ let NeverAuthApi = require('neverauth')();
 
 From here, you're ready to start calling the API. 
 
-## Examples
+## API Documentation
 
-At this time please refer to the `test.js` file in this project for examples of calling the API.
+For a complete listing of examples, check out `test.js` file in this project for examples of calling the API. This document may not have an example of every endpoint.
+
+### Accounts
+
+The `accounts` API is mainly used for administration purposes on your NeverAuth account. Pretty much everything you can do in the admin dashboard you can do through the `accounts` API itself. This means you could write your own dashboard if you wanted, or you can use the one provided by NeverAuth.
+
+#### `accounts.register`
+
+Registers a NeverAuth account.
+
+```javascript 
+NeverAuthApi.register().then()...
+```
+
+#### `accounts.authenticate`
+
+Authenticates a NeverAuth account.

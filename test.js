@@ -24,13 +24,20 @@ let $moreSettings = {
 };
 
 console.log(`==== REGISTER ====`);
-NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerResult) => {
+NeverAuthApi.accounts.register({
+    name: $name,
+    email: $email,
+    password: $password
+}).then(async (registerResult) => {
     console.log(`${JSON.stringify(registerResult)}`);
     assert.equal(registerResult, true);
     console.log(`- passed -\n`);
 
     console.log(`==== AUTHENTICATE ====`);
-    let authenticateResult = await NeverAuthApi.myAccount.authenticate($email, $password);
+    let authenticateResult = await NeverAuthApi.accounts.authenticate({
+        email: $email,
+        password: $password
+    });
     console.log(`${JSON.stringify(authenticateResult)}`);
     assert.notEqual(authenticateResult.email, undefined);
     assert.notEqual(authenticateResult.token, undefined);
@@ -41,13 +48,19 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     $accountToken = authenticateResult.token.value;
 
     console.log(`==== CHECK TOKEN ====`);
-    let checkTokenResult = await NeverAuthApi.myAccount.checkToken($accountToken);
+    let checkTokenResult = await NeverAuthApi.accounts.checkToken({
+        token: $accountToken
+    });
     console.log(`${JSON.stringify(checkTokenResult)}`);
     assert.equal(checkTokenResult, true);
     console.log(`- passed -\n`);
 
     console.log(`==== CREATE APP ====`);
-    let createAppResult = await NeverAuthApi.myAccount.createApp($accountToken, $appName, $appDescription);
+    let createAppResult = await NeverAuthApi.accounts.createApp({
+        token: $accountToken,
+        name: $appName,
+        description: $appDescription
+    });
     console.log(`${JSON.stringify(createAppResult)}`);
     assert.notEqual(createAppResult.id, undefined);
     assert.notEqual(createAppResult.id, null);
@@ -62,37 +75,65 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     $appid = createAppResult.id;
 
     console.log(`==== GET SINGLE APP ====`);
-    let getSingleAppResult = await NeverAuthApi.myAccount.getApp($accountToken, $appid);
+    let getSingleAppResult = await NeverAuthApi.accounts.getApp({
+        token: $accountToken,
+        appId: $appid
+    });
     console.log(`${JSON.stringify(getSingleAppResult)}`);
     assert.equal(getSingleAppResult.name, $appName);
     assert.equal(getSingleAppResult.description, $appDescription);
     console.log(`- passed -\n`);
 
     console.log(`==== CREATE APP USER ====`);
-    let createAppUserResult = await NeverAuthApi.user.create($clientId, $secretKey, $name, $email, $password, $settings);
+    let createAppUserResult = await NeverAuthApi.users.create({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        name: $name,
+        email: $email,
+        password: $password,
+        settings: $settings
+    });
     console.log(`${JSON.stringify(createAppUserResult)}`);
     assert.equal(createAppUserResult, true);
     console.log(`- passed -\n`);
 
     console.log(`==== AUTHENTICATE APP USER ====`);
-    let authenticateAppUserResult = await NeverAuthApi.user.authenticate($clientId, $secretKey, $email, $password);
+    let authenticateAppUserResult = await NeverAuthApi.users.authenticate({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        email: $email,
+        password: $password
+    });
     console.log(`${JSON.stringify(authenticateAppUserResult)}`);
     console.log(`- passed -\n`);
     $token = authenticateAppUserResult.token.value;
 
     console.log(`==== GET APP USER DETAILS ====`);
-    let userDetailsResult = await NeverAuthApi.user.getProfile($clientId, $secretKey, $token);
+    let userDetailsResult = await NeverAuthApi.users.getProfile({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token
+    });
     console.log(`${JSON.stringify(userDetailsResult)}`);
     console.log(`- passed -\n`);
 
     console.log(`==== GET APP USER SETTINGS ====`);
-    let userSettingsFirstResult = await NeverAuthApi.user.getSettings($clientId, $secretKey, $token);
+    let userSettingsFirstResult = await NeverAuthApi.users.getSettings({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token
+    });
     console.log(`${JSON.stringify(userSettingsFirstResult)}`);
     assert.equal(userSettingsFirstResult.favoriteColor, "blue");
     console.log(`- passed -\n`);
 
     console.log(`==== SAVE APP USER SETTINGS ====`);
-    let saveUserSettingsResult = await NeverAuthApi.user.saveSettings($clientId, $secretKey, $token, $moreSettings);
+    let saveUserSettingsResult = await NeverAuthApi.users.saveSettings({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token,
+        settings: $moreSettings
+    });
     console.log(`${JSON.stringify(saveUserSettingsResult)}`);
     assert.equal(saveUserSettingsResult.admin, "0");
     assert.equal(saveUserSettingsResult.favoriteColor, "blue");
@@ -100,7 +141,12 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     console.log(`- passed -\n`);
 
     console.log(`==== DELETE APP USER SINGLE SETTING ====`);
-    let deleteUserSettingResult = await NeverAuthApi.user.deleteSetting($clientId, $secretKey, $token, 'favoriteColor');
+    let deleteUserSettingResult = await NeverAuthApi.users.deleteSetting({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token,
+        key: 'favoriteColor'
+    });
     console.log(`${JSON.stringify(deleteUserSettingResult)}`);
     assert.equal(deleteUserSettingResult.admin, "0");
     assert.equal(deleteUserSettingResult.favoriteColor, undefined);
@@ -108,19 +154,32 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     console.log(`- passed -\n`);
 
     console.log(`==== GET SINGLE APP USER SETTING ====`);
-    let getSettingResult = await NeverAuthApi.user.getSetting($clientId, $secretKey, $token, 'favoriteMovie');
+    let getSettingResult = await NeverAuthApi.users.getSetting({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token,
+        key: 'favoriteMovie'
+    });
     console.log(`${JSON.stringify(getSettingResult)}`);
     assert.equal(getSettingResult, "Top Gun");
     console.log(`- passed -\n`);
 
     console.log(`==== DEAUTHENTICATE APP USER ====`);
-    let deauthenticateAppUserResult = await NeverAuthApi.user.deauthenticate($clientId, $secretKey, $token);
+    let deauthenticateAppUserResult = await NeverAuthApi.users.deauthenticate({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token
+    });
     console.log(`${JSON.stringify(deauthenticateAppUserResult)}`);
     console.log(`- passed -\n`);
 
     console.log(`==== GET APP USER SETTINGS (should fail) ====`);
     try {
-        let userSettingsSecondResult = await NeverAuthApi.user.getSettings($clientId, $secretKey, $token);
+        let userSettingsSecondResult = await NeverAuthApi.users.getSettings({
+            clientId: $clientId,
+            secretKey: $secretKey,
+            accessToken: $token
+        });
         assert.fail();
     }
     catch (err) {
@@ -129,24 +188,39 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     }
 
     console.log(`==== AUTHENTICATE APP USER 2nd ====`);
-    authenticateAppUserResult = await NeverAuthApi.user.authenticate($clientId, $secretKey, $email, $password);
+    authenticateAppUserResult = await NeverAuthApi.users.authenticate({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        email: $email,
+        password: $password
+    });
     console.log(`${JSON.stringify(authenticateAppUserResult)}`);
     console.log(`- passed -\n`);
     $token = authenticateAppUserResult.token.value;
 
     console.log(`==== DEACTIVATE APP USER ====`);
-    let deactivateAppUserResult = await NeverAuthApi.user.deactivate($clientId, $secretKey, $token);
+    let deactivateAppUserResult = await NeverAuthApi.users.deactivate({
+        clientId: $clientId,
+        secretKey: $secretKey,
+        accessToken: $token
+    });
     console.log(`${JSON.stringify(deactivateAppUserResult)}`);
     console.log(`- passed -\n`);
 
     console.log(`==== GET APPS 1st ====`);
-    let getApps1Result = await NeverAuthApi.myAccount.getApps($accountToken);
+    let getApps1Result = await NeverAuthApi.accounts.getApps({
+        token: $accountToken
+    });
     console.log(`${JSON.stringify(getApps1Result)}`);
     assert.equal(getApps1Result.length, 1);
     console.log(`- passed -\n`);
 
     console.log(`==== CREATE ANOTHER APP ====`);
-    let createAnotherAppResult = await NeverAuthApi.myAccount.createApp($accountToken, $appName, $appDescription);
+    let createAnotherAppResult = await NeverAuthApi.accounts.createApp({
+        token: $accountToken,
+        name: $appName,
+        description: $appDescription
+    });
     console.log(`${JSON.stringify(createAnotherAppResult)}`);
     assert.notEqual(createAnotherAppResult.id, undefined);
     assert.notEqual(createAnotherAppResult.id, null);
@@ -157,32 +231,43 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     console.log(`- passed -\n`);
 
     console.log(`==== GET APPS 2nd ====`);
-    let getApps2Result = await NeverAuthApi.myAccount.getApps($accountToken);
+    let getApps2Result = await NeverAuthApi.accounts.getApps({
+        token: $accountToken
+    });
     console.log(`${JSON.stringify(getApps2Result)}`);
     assert.equal(getApps2Result.length, 2);
     console.log(`- passed -\n`);
 
     console.log(`==== DELETE APP ====`);
-    let deleteAppResult = await NeverAuthApi.myAccount.deleteApp($accountToken, createAnotherAppResult.id);
+    let deleteAppResult = await NeverAuthApi.accounts.deleteApp({
+        token: $accountToken,
+        appId: createAnotherAppResult.id
+    });
     console.log(`${JSON.stringify(deleteAppResult)}`);
     assert.equal(deleteAppResult, true);
     console.log(`- passed -\n`);
 
     console.log(`==== GET APPS 3rd ====`);
-    let getApps3Result = await NeverAuthApi.myAccount.getApps($accountToken);
+    let getApps3Result = await NeverAuthApi.accounts.getApps({
+        token: $accountToken
+    });
     console.log(`${JSON.stringify(getApps3Result)}`);
     assert.equal(getApps3Result.length, 1);
     console.log(`- passed -\n`);
 
     console.log(`==== DEAUTHENTICATE ACCOUNT ====`);
-    let deauthenticateResult = await NeverAuthApi.myAccount.deauthenticate($accountToken);
+    let deauthenticateResult = await NeverAuthApi.accounts.deauthenticate({
+        token: $accountToken
+    });
     console.log(`${JSON.stringify(deauthenticateResult)}`);
     assert.equal(deauthenticateResult, true);
     console.log(`- passed -\n`);
 
     console.log(`==== DEACTIVATE ACCOUNT (should fail) ====`);
     try {
-        let deactivateFirstTryResult = await NeverAuthApi.myAccount.deactivate($accountToken);
+        let deactivateFirstTryResult = await NeverAuthApi.accounts.deactivate({
+            token: $accountToken
+        });
         assert.fail();
     }
     catch (err) {
@@ -191,7 +276,10 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     }
 
     console.log(`==== AUTHENTICATE BEFORE DEACTIVATE ====`);
-    let authenticateBeforeDeactivateResult = await NeverAuthApi.myAccount.authenticate($email, $password);
+    let authenticateBeforeDeactivateResult = await NeverAuthApi.accounts.authenticate({
+        email: $email,
+        password: $password
+    });
     console.log(`${JSON.stringify(authenticateBeforeDeactivateResult)}`);
     assert.notEqual(authenticateBeforeDeactivateResult.email, undefined);
     assert.notEqual(authenticateBeforeDeactivateResult.token, undefined);
@@ -201,7 +289,9 @@ NeverAuthApi.myAccount.register($name, $email, $password).then(async (registerRe
     $accountToken = authenticateBeforeDeactivateResult.token.value;
 
     console.log(`==== DEACTIVATE ACCOUNT ====`);
-    let deactivateSecondTryResult = await NeverAuthApi.myAccount.deactivate($accountToken);
+    let deactivateSecondTryResult = await NeverAuthApi.accounts.deactivate({
+        token: $accountToken
+    });
     console.log(`${JSON.stringify(deactivateSecondTryResult)}`);
     assert.equal(deactivateSecondTryResult, true);
     console.log(`- passed -\n`);

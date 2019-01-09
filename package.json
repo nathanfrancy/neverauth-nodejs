@@ -1,6 +1,6 @@
 {
   "name": "@neverauth/neverauth",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "NeverAuth API client for nodejs",
   "main": "index.js",
   "scripts": {

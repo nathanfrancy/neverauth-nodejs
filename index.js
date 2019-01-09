@@ -7,8 +7,8 @@ function NeverAuthApi(args) {
     if (!args) args = {};
 
     // TODO: Change these to use https when we get that set up.
-    this.urlRoot = "http://api.neverauth.io";
-    let protocol = "http";
+    this.urlRoot = "https://api.neverauth.io";
+    let protocol = "https";
 
     // Set up variables for this instance
     this.accountAccessToken = args.accountAccessToken || null;
